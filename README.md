@@ -26,17 +26,6 @@ You can also install straight from GitHub. Built output is committed, so no buil
 dsh plugin --profile web add github:copylee711/dsh-proxy
 ```
 
-### Upgrading from an earlier name
-
-Since 0.3.0 the package is `@copylee/dsh-proxy`. If you installed `dsh-plugin-proxy` or `dsh-network-proxy`, remove it first, then install:
-
-```sh
-dsh plugin --profile web remove dsh-network-proxy   # or dsh-plugin-proxy
-dsh plugin --profile web add @copylee/dsh-proxy
-```
-
-If you saved proxy settings before, open `$DSH_HOME/profiles/web/cordis.patch.yml` and, in the `id: dsh-proxy` row, change `name:` to `name: '@copylee/dsh-proxy'` (or delete that line). The proxy settings themselves stay as they are.
-
 ## Use
 
 Open **Settings → Network proxy**:
