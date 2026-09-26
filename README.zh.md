@@ -23,7 +23,7 @@ dsh plugin --profile web add @copylee/dsh-proxy
 也可以直接从 GitHub 安装（仓库已提交构建产物，不需要构建脚本或 `allowBuilds`）：
 
 ```sh
-dsh plugin --profile web add github:1617110693/dsh-proxy
+dsh plugin --profile web add github:copylee711/dsh-proxy
 ```
 
 ### 从旧名称升级
@@ -40,6 +40,8 @@ dsh plugin --profile web add @copylee/dsh-proxy
 ## 使用
 
 打开「设置 → 网络代理」：
+
+![设置中的「网络代理」页面：全局代理，以及设为「直连」或「使用代理」的提供商](assets/settings-network-proxy.zh.png)
 
 | 区域 | 说明 |
 |---|---|

@@ -1,6 +1,6 @@
 {
   "name": "@copylee/dsh-proxy",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "DeepSeek Harness 代理插件：在设置中配置全局 HTTP(S) 代理，或为单个 LLM 提供商单独配置代理 / 直连",
   "keywords": [
     "dsh",
@@ -12,9 +12,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/1617110693/dsh-proxy.git"
+    "url": "git+https://github.com/copylee711/dsh-proxy.git"
   },
-  "homepage": "https://github.com/1617110693/dsh-proxy#readme",
+  "homepage": "https://github.com/copylee711/dsh-proxy#readme",
   "type": "module",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
