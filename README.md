@@ -1,4 +1,4 @@
-# dsh-network-proxy
+# @copylee/dsh-proxy
 
 English | [中文](README.zh.md)
 
@@ -13,23 +13,29 @@ Precedence: provider setting > global proxy > `HTTP(S)_PROXY` from launch.
 ## Install
 
 ```sh
-dsh plugin --profile web add github:1617110693/dsh-proxy
+dsh plugin --profile web add @copylee/dsh-proxy
 ```
 
-Built output (`lib/`, `client/`) is committed, so a GitHub install needs no build script and no `allowBuilds` entry. Restart `dsh web`, and a **Network proxy** page appears in Settings.
+Restart `dsh web`, and a **Network proxy** page appears in Settings.
 
-> Install from the `github:` address above. The `dsh-network-proxy` package on npm is an unrelated package, so `dsh plugin add dsh-network-proxy` does not install this plugin.
+> Keep the `@copylee/` scope. The unscoped `dsh-proxy` and `dsh-network-proxy` packages on npm belong to other people and are unrelated.
 
-### Upgrading from `dsh-plugin-proxy`
-
-Since 0.2.0 the package is named `dsh-network-proxy`. Remove the old package, then install:
+You can also install straight from GitHub. Built output is committed, so no build script or `allowBuilds` entry is needed:
 
 ```sh
-dsh plugin --profile web remove dsh-plugin-proxy
 dsh plugin --profile web add github:1617110693/dsh-proxy
 ```
 
-If you saved proxy settings before, open `$DSH_HOME/profiles/web/cordis.patch.yml` and, in the `id: dsh-proxy` row, change `name: dsh-plugin-proxy` to `name: dsh-network-proxy` (or delete that line). The proxy settings themselves stay as they are.
+### Upgrading from an earlier name
+
+Since 0.3.0 the package is `@copylee/dsh-proxy`. If you installed `dsh-plugin-proxy` or `dsh-network-proxy`, remove it first, then install:
+
+```sh
+dsh plugin --profile web remove dsh-network-proxy   # or dsh-plugin-proxy
+dsh plugin --profile web add @copylee/dsh-proxy
+```
+
+If you saved proxy settings before, open `$DSH_HOME/profiles/web/cordis.patch.yml` and, in the `id: dsh-proxy` row, change `name:` to `name: '@copylee/dsh-proxy'` (or delete that line). The proxy settings themselves stay as they are.
 
 ## Use
 
@@ -95,6 +101,24 @@ npm run build   # regenerates lib/ and client/ (commit them)
 ```
 
 Try it in a local dsh: `dsh plugin --profile web add /path/to/dsh-proxy`.
+
+### Publish to npm (maintainers)
+
+```sh
+npm login                 # sign in as copylee; check with npm whoami
+npm ci && npm test        # tests pass; lib/ and client/ are already built
+npm pack --dry-run        # should list only lib/ client/ cordis.patch.yml README LICENSE package.json
+npm publish               # publishConfig is public; with 2FA on, npm asks for an OTP
+```
+
+For later releases:
+
+```sh
+npm version patch         # or minor / major: bumps the version and tags it
+npm run build             # rebuild; commit lib/ and client/ if they changed
+npm publish
+git push --follow-tags
+```
 
 ## License
 

@@ -1,6 +1,6 @@
-# dsh-network-proxy bundle layer. The entry id `dsh-proxy` is the Settings
+# @copylee/dsh-proxy bundle layer. The entry id `dsh-proxy` is the Settings
 # namespace the "Network proxy" page edits; keep it when overriding the row.
 # Defaults change nothing: no global proxy, no per-provider routes.
 - insert:
     - id: dsh-proxy
-      name: dsh-network-proxy
+      name: '@copylee/dsh-proxy'

@@ -1,4 +1,4 @@
-# dsh-network-proxy
+# @copylee/dsh-proxy
 
 [English](README.md) | 中文
 
@@ -13,24 +13,29 @@
 ## 安装
 
 ```sh
-dsh plugin --profile web add github:1617110693/dsh-proxy
+dsh plugin --profile web add @copylee/dsh-proxy
 ```
 
-仓库里已提交构建产物（`lib/`、`client/`），从 GitHub 安装不需要执行构建脚本，也不需要配置 `allowBuilds`。
 重启 `dsh web` 后，「设置」中会出现「网络代理」页面。
 
-> 请用上面的 `github:` 地址安装。npm 上同名的 `dsh-network-proxy` 是另一个无关的包，`dsh plugin add dsh-network-proxy` 装到的不是本插件。
+> 请带上 `@copylee/` 作用域。npm 上无作用域的 `dsh-proxy`、`dsh-network-proxy` 是别人的无关包。
 
-### 从旧名称 `dsh-plugin-proxy` 升级
-
-0.2.0 起包名改为 `dsh-network-proxy`。先卸载旧包再安装：
+也可以直接从 GitHub 安装（仓库已提交构建产物，不需要构建脚本或 `allowBuilds`）：
 
 ```sh
-dsh plugin --profile web remove dsh-plugin-proxy
 dsh plugin --profile web add github:1617110693/dsh-proxy
 ```
 
-如果之前在设置页保存过代理配置，打开 `$DSH_HOME/profiles/web/cordis.patch.yml`，把 `id: dsh-proxy` 那一项里的 `name: dsh-plugin-proxy` 改成 `name: dsh-network-proxy`（或删掉这一行）。代理配置本身不用改。
+### 从旧名称升级
+
+0.3.0 起包名为 `@copylee/dsh-proxy`。之前装的是 `dsh-plugin-proxy` 或 `dsh-network-proxy` 时，先卸载旧包再安装：
+
+```sh
+dsh plugin --profile web remove dsh-network-proxy   # 或 dsh-plugin-proxy
+dsh plugin --profile web add @copylee/dsh-proxy
+```
+
+如果之前在设置页保存过代理配置，打开 `$DSH_HOME/profiles/web/cordis.patch.yml`，把 `id: dsh-proxy` 那一项的 `name:` 改成 `name: '@copylee/dsh-proxy'`（或删掉这一行）。代理配置本身不用改。
 
 ## 使用
 
@@ -96,6 +101,24 @@ npm run build   # 生成 lib/ 与 client/（需提交）
 ```
 
 在本地 dsh 中调试：`dsh plugin --profile web add /path/to/dsh-proxy`。
+
+### 发布到 npm（维护者）
+
+```sh
+npm login                 # 用 copylee 账号登录，npm whoami 确认
+npm ci && npm test        # 确认测试通过；lib/、client/ 已是最新构建
+npm pack --dry-run        # 只应包含 lib/ client/ cordis.patch.yml README LICENSE package.json
+npm publish               # publishConfig 已设为 public；开启 2FA 时会要求输入 OTP
+```
+
+以后发新版本：
+
+```sh
+npm version patch         # 或 minor / major：改版本号并打 git tag
+npm run build             # 重新构建并提交 lib/、client/（如有变化）
+npm publish
+git push --follow-tags
+```
 
 ## License
 

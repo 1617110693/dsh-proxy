@@ -19,7 +19,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { fetch as undiciFetch, type Dispatcher } from 'undici'
 
-const STATE_KEY = Symbol.for('dsh-network-proxy.fetch-router.v1')
+const STATE_KEY = Symbol.for('dsh-proxy.fetch-router.v1')
 
 interface Scope {
   readonly dispatcher: Dispatcher
@@ -55,7 +55,7 @@ function acquireState(): RouterState {
     return existing
   }
   if (typeof globalThis.fetch !== 'function') {
-    throw new Error('dsh-network-proxy: 当前 Node 运行时没有全局 fetch')
+    throw new Error('@copylee/dsh-proxy: 当前 Node 运行时没有全局 fetch')
   }
   const storage = new AsyncLocalStorage<Scope>()
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'fetch')

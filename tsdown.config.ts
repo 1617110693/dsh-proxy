@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsdown'
 
 /** Must equal the package name: the host's ModuleLoader looks the client up by it. */
-const CLIENT_ID = 'dsh-network-proxy'
+const CLIENT_ID = '@copylee/dsh-proxy'
 
 export default defineConfig([
   // Host plugin: ESM for the Cordis loader; runtime dependencies stay external.
