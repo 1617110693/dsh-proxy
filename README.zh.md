@@ -26,17 +26,6 @@ dsh plugin --profile web add @copylee/dsh-proxy
 dsh plugin --profile web add github:copylee711/dsh-proxy
 ```
 
-### 从旧名称升级
-
-0.3.0 起包名为 `@copylee/dsh-proxy`。之前装的是 `dsh-plugin-proxy` 或 `dsh-network-proxy` 时，先卸载旧包再安装：
-
-```sh
-dsh plugin --profile web remove dsh-network-proxy   # 或 dsh-plugin-proxy
-dsh plugin --profile web add @copylee/dsh-proxy
-```
-
-如果之前在设置页保存过代理配置，打开 `$DSH_HOME/profiles/web/cordis.patch.yml`，把 `id: dsh-proxy` 那一项的 `name:` 改成 `name: '@copylee/dsh-proxy'`（或删掉这一行）。代理配置本身不用改。
-
 ## 使用
 
 打开「设置 → 网络代理」：
