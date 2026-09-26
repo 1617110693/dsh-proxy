@@ -1,4 +1,4 @@
-# dsh-plugin-proxy
+# dsh-network-proxy
 
 English | [中文](README.zh.md)
 
@@ -17,6 +17,19 @@ dsh plugin --profile web add github:1617110693/dsh-proxy
 ```
 
 Built output (`lib/`, `client/`) is committed, so a GitHub install needs no build script and no `allowBuilds` entry. Restart `dsh web`, and a **Network proxy** page appears in Settings.
+
+> Install from the `github:` address above. The `dsh-network-proxy` package on npm is an unrelated package, so `dsh plugin add dsh-network-proxy` does not install this plugin.
+
+### Upgrading from `dsh-plugin-proxy`
+
+Since 0.2.0 the package is named `dsh-network-proxy`. Remove the old package, then install:
+
+```sh
+dsh plugin --profile web remove dsh-plugin-proxy
+dsh plugin --profile web add github:1617110693/dsh-proxy
+```
+
+If you saved proxy settings before, open `$DSH_HOME/profiles/web/cordis.patch.yml` and, in the `id: dsh-proxy` row, change `name: dsh-plugin-proxy` to `name: dsh-network-proxy` (or delete that line). The proxy settings themselves stay as they are.
 
 ## Use
 
