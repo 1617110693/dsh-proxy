@@ -1,5 +1,5 @@
 /**
- * dsh-network-proxy — proxy settings for DeepSeek Harness.
+ * @copylee/dsh-proxy — proxy settings for DeepSeek Harness.
  *
  * - `global`: one HTTP(S) proxy for every outbound request of the Harness
  *   (model calls, web search / fetch, HTTP MCP, spawned tools).
@@ -11,7 +11,7 @@
  *
  * ```yaml
  * - id: dsh-proxy
- *   name: dsh-network-proxy
+ *   name: '@copylee/dsh-proxy'
  *   config:
  *     global:
  *       enabled: true
@@ -21,7 +21,7 @@
  *       deepseek: { mode: direct }
  * ```
  *
- * @module dsh-network-proxy
+ * @module @copylee/dsh-proxy
  */
 import type { Context } from '@deepseek-ai/cordis'
 import { Config, type ProviderProxyConfig, type ProxySettings } from './config.ts'
@@ -33,7 +33,7 @@ export { Config } from './config.ts'
 export type { GlobalProxyConfig, ProviderProxyConfig, ProxySettings } from './config.ts'
 export { parseProxyUrl, redactProxyUrl, ProxyUrlError } from './proxy-url.ts'
 
-export const name = 'dsh-network-proxy'
+export const name = '@copylee/dsh-proxy'
 
 /**
  * How long a replaced provider route stays open. A stream that started on it
