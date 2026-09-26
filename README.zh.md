@@ -1,4 +1,4 @@
-# dsh-plugin-proxy
+# dsh-network-proxy
 
 [English](README.md) | 中文
 
@@ -18,6 +18,19 @@ dsh plugin --profile web add github:1617110693/dsh-proxy
 
 仓库里已提交构建产物（`lib/`、`client/`），从 GitHub 安装不需要执行构建脚本，也不需要配置 `allowBuilds`。
 重启 `dsh web` 后，「设置」中会出现「网络代理」页面。
+
+> 请用上面的 `github:` 地址安装。npm 上同名的 `dsh-network-proxy` 是另一个无关的包，`dsh plugin add dsh-network-proxy` 装到的不是本插件。
+
+### 从旧名称 `dsh-plugin-proxy` 升级
+
+0.2.0 起包名改为 `dsh-network-proxy`。先卸载旧包再安装：
+
+```sh
+dsh plugin --profile web remove dsh-plugin-proxy
+dsh plugin --profile web add github:1617110693/dsh-proxy
+```
+
+如果之前在设置页保存过代理配置，打开 `$DSH_HOME/profiles/web/cordis.patch.yml`，把 `id: dsh-proxy` 那一项里的 `name: dsh-plugin-proxy` 改成 `name: dsh-network-proxy`（或删掉这一行）。代理配置本身不用改。
 
 ## 使用
 

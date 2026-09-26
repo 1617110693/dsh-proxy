@@ -18,7 +18,7 @@ beforeAll(async () => {
 afterAll(async () => { await Promise.all([globalProxy.close(), providerProxy.close(), target.close()]) })
 afterEach(() => { globalProxy.hits.length = 0; providerProxy.hits.length = 0; providerProxy.auth.length = 0 })
 
-describe('dsh-plugin-proxy', () => {
+describe('dsh-network-proxy', () => {
   it('sends a configured provider through its own proxy and the rest through the global one', async () => {
     const ctx = fakeContext()
     apply(ctx, Config({

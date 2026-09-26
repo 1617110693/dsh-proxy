@@ -106,7 +106,7 @@ export declare function parseProxyUrl(raw: string): URL;
 export declare function redactProxyUrl(url: URL): string;
 //#endregion
 //#region src/index.d.ts
-export declare const name = "dsh-plugin-proxy";
+export declare const name = "dsh-network-proxy";
 /**
  * How long a replaced provider route stays open. A stream that started on it
  * may still issue requests (a retry, a follow-up call) under its old scope.

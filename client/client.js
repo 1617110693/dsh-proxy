@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-	id: "dsh-plugin-proxy",
+	id: "dsh-network-proxy",
 	factory: (require) => {
 		var module = { exports: {} };
 		var exports = module.exports;
