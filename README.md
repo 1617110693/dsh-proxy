@@ -23,7 +23,7 @@ Restart `dsh web`, and a **Network proxy** page appears in Settings.
 You can also install straight from GitHub. Built output is committed, so no build script or `allowBuilds` entry is needed:
 
 ```sh
-dsh plugin --profile web add github:1617110693/dsh-proxy
+dsh plugin --profile web add github:copylee711/dsh-proxy
 ```
 
 ### Upgrading from an earlier name
@@ -40,6 +40,8 @@ If you saved proxy settings before, open `$DSH_HOME/profiles/web/cordis.patch.ym
 ## Use
 
 Open **Settings → Network proxy**:
+
+![The Network proxy page in Settings: a global proxy, and per-provider rows set to Direct or Use proxy](assets/settings-network-proxy.png)
 
 | Area | What it does |
 |---|---|
