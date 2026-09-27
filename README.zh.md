@@ -102,14 +102,15 @@ npm pack --dry-run        # 只应包含 lib/ client/ cordis.patch.yml README LI
 npm publish               # publishConfig 已设为 public；开启 2FA 时会要求输入 OTP
 ```
 
-以后发新版本：
+以后发新版本只需推送版本 tag，[publish 工作流](.github/workflows/publish.yml) 会通过 npm Trusted Publishing 自动发布（无需 token）：
 
 ```sh
-npm version patch         # 或 minor / major：改版本号并打 git tag
+npm version patch         # 或 minor / major：改版本号、提交并打 vX.Y.Z tag
 npm run build             # 重新构建并提交 lib/、client/（如有变化）
-npm publish
-git push --follow-tags
+git push --follow-tags    # 推送 vX.Y.Z tag 即触发发布
 ```
+
+工作流会校验 tag 与 `package.json` 版本一致，跑 typecheck、测试和构建检查后再发布。预发布版本（如 `1.2.0-rc.1`）发布到 `next` dist-tag。也可以在 Actions 页面手动运行；npm 上已存在的版本会被跳过。
 
 ## License
 
