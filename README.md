@@ -102,14 +102,15 @@ npm pack --dry-run        # should list only lib/ client/ cordis.patch.yml READM
 npm publish               # publishConfig is public; with 2FA on, npm asks for an OTP
 ```
 
-For later releases:
+For later releases, push a version tag and the [publish workflow](.github/workflows/publish.yml) publishes it through npm Trusted Publishing (no token needed):
 
 ```sh
-npm version patch         # or minor / major: bumps the version and tags it
+npm version patch         # or minor / major: bumps the version, commits and tags vX.Y.Z
 npm run build             # rebuild; commit lib/ and client/ if they changed
-npm publish
-git push --follow-tags
+git push --follow-tags    # the vX.Y.Z tag triggers the publish workflow
 ```
+
+The workflow checks that the tag matches `package.json`, runs typecheck, tests and the build check, then publishes. Prerelease versions (`1.2.0-rc.1`) go to the `next` dist-tag. It can also be run by hand from the Actions tab; a version already on npm is skipped.
 
 ## License
 

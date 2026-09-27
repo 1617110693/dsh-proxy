@@ -1,0 +1,61 @@
+name: publish
+
+# Publishes to npm through npm Trusted Publishing (OIDC): no NPM_TOKEN secret needed.
+# The trusted publisher on npmjs.com must name this repository and this file (publish.yml).
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # lets npm exchange the GitHub OIDC token for a publish credential
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # Trusted publishing needs npm >= 11.5.1; Node 24 ships npm 11.
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Built output is up to date
+        run: |
+          npm run build
+          git diff --exit-code -- lib client
+
+      - name: Check version
+        id: version
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "::notice::$name@$version is already on npm, skipping publish"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+          # Prereleases (e.g. 0.4.0-rc.1) go to the "next" dist-tag so they don't become "latest".
+          if [[ "$version" == *-* ]]; then
+            echo "dist_tag=next" >> "$GITHUB_OUTPUT"
+          else
+            echo "dist_tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish
+        if: steps.version.outputs.skip != 'true'
+        run: npm publish --tag ${{ steps.version.outputs.dist_tag }}
