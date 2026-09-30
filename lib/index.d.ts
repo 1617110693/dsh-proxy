@@ -4,6 +4,8 @@ import { Context } from "@deepseek-ai/cordis";
 /** Global proxy: every outbound request of the Harness process. */
 interface GlobalProxyConfig {
   enabled: boolean;
+  /** Missing mode preserves legacy manual configuration. */
+  mode?: 'proxy' | 'system';
   /** `http://host:port` or `https://host:port`, optionally with `user:password@`. */
   url: string;
   /** Hosts reached directly while the global proxy is on; loopback is always direct. */
@@ -13,7 +15,7 @@ interface GlobalProxyConfig {
 interface ProviderProxyConfig {
   enabled: boolean;
   /** `proxy` sends the provider through `url`; `direct` bypasses every proxy. */
-  mode: 'proxy' | 'direct';
+  mode: 'proxy' | 'direct' | 'system';
   url: string;
 }
 interface ProxySettings {
@@ -22,58 +24,64 @@ interface ProxySettings {
 }
 declare const GlobalProxyConfig: Schema<Schemastery.ObjectS<NoInfer<{
   enabled: Schema<boolean, boolean, "defined">;
+  mode: Schema<"proxy" | "system", "proxy" | "system", "defined">;
   url: Schema<string, string, "defined">;
   noProxy: Schema<string[], string[], "defined">;
 }>>, Schemastery.ObjectT<NoInfer<{
   enabled: Schema<boolean, boolean, "defined">;
+  mode: Schema<"proxy" | "system", "proxy" | "system", "defined">;
   url: Schema<string, string, "defined">;
   noProxy: Schema<string[], string[], "defined">;
 }>>, "plain">;
 declare const ProviderProxyConfig: Schema<Schemastery.ObjectS<NoInfer<{
   enabled: Schema<boolean, boolean, "defined">;
-  mode: Schema<"direct" | "proxy", "direct" | "proxy", "defined">;
+  mode: Schema<"direct" | "proxy" | "system", "direct" | "proxy" | "system", "defined">;
   url: Schema<string, string, "defined">;
 }>>, Schemastery.ObjectT<NoInfer<{
   enabled: Schema<boolean, boolean, "defined">;
-  mode: Schema<"direct" | "proxy", "direct" | "proxy", "defined">;
+  mode: Schema<"direct" | "proxy" | "system", "direct" | "proxy" | "system", "defined">;
   url: Schema<string, string, "defined">;
 }>>, "plain">;
 export declare const Config: Schema<Schemastery.ObjectS<NoInfer<{
   global: Schema<NoInfer<Schemastery.ObjectS<NoInfer<{
     enabled: Schema<boolean, boolean, "defined">;
+    mode: Schema<"proxy" | "system", "proxy" | "system", "defined">;
     url: Schema<string, string, "defined">;
     noProxy: Schema<string[], string[], "defined">;
   }>>>, NoInfer<Schemastery.ObjectT<NoInfer<{
     enabled: Schema<boolean, boolean, "defined">;
+    mode: Schema<"proxy" | "system", "proxy" | "system", "defined">;
     url: Schema<string, string, "defined">;
     noProxy: Schema<string[], string[], "defined">;
   }>>>, "volatile">;
   providers: Schema<NoInfer<import("@deepseek-ai/cosmokit").Dict<{
     enabled?: boolean | null | undefined;
-    mode?: "direct" | "proxy" | null | undefined;
+    mode?: "direct" | "proxy" | "system" | null | undefined;
     url?: string | null | undefined;
   } & import("@deepseek-ai/cosmokit").Dict, string>>, NoInfer<import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<NoInfer<{
     enabled: Schema<boolean, boolean, "defined">;
-    mode: Schema<"direct" | "proxy", "direct" | "proxy", "defined">;
+    mode: Schema<"direct" | "proxy" | "system", "direct" | "proxy" | "system", "defined">;
     url: Schema<string, string, "defined">;
   }>>, string>>, "volatile-defined">;
 }>>, Schemastery.ObjectT<NoInfer<{
   global: Schema<NoInfer<Schemastery.ObjectS<NoInfer<{
     enabled: Schema<boolean, boolean, "defined">;
+    mode: Schema<"proxy" | "system", "proxy" | "system", "defined">;
     url: Schema<string, string, "defined">;
     noProxy: Schema<string[], string[], "defined">;
   }>>>, NoInfer<Schemastery.ObjectT<NoInfer<{
     enabled: Schema<boolean, boolean, "defined">;
+    mode: Schema<"proxy" | "system", "proxy" | "system", "defined">;
     url: Schema<string, string, "defined">;
     noProxy: Schema<string[], string[], "defined">;
   }>>>, "volatile">;
   providers: Schema<NoInfer<import("@deepseek-ai/cosmokit").Dict<{
     enabled?: boolean | null | undefined;
-    mode?: "direct" | "proxy" | null | undefined;
+    mode?: "direct" | "proxy" | "system" | null | undefined;
     url?: string | null | undefined;
   } & import("@deepseek-ai/cosmokit").Dict, string>>, NoInfer<import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<NoInfer<{
     enabled: Schema<boolean, boolean, "defined">;
-    mode: Schema<"direct" | "proxy", "direct" | "proxy", "defined">;
+    mode: Schema<"direct" | "proxy" | "system", "direct" | "proxy" | "system", "defined">;
     url: Schema<string, string, "defined">;
   }>>, string>>, "volatile-defined">;
 }>>, "plain">;

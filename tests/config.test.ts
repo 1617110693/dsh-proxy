@@ -4,7 +4,7 @@ import { Config } from '../src/config.ts'
 describe('Config', () => {
   it('fills defaults and exposes live references', () => {
     const config = Config({ providers: { anthropic: { url: 'http://127.0.0.1:7890' } } })
-    expect(config.global.get()).toEqual({ enabled: false, url: '', noProxy: [] })
+    expect(config.global.get()).toEqual({ enabled: false, mode: 'proxy', url: '', noProxy: [] })
     expect(config.providers.get()).toEqual({
       anthropic: { enabled: true, mode: 'proxy', url: 'http://127.0.0.1:7890' },
     })

@@ -6,7 +6,7 @@
 import type { ProviderProxyConfig, ProxySettings } from '../config.ts'
 import { parseProxyUrl } from '../proxy-url.ts'
 
-export type ProviderChoice = 'global' | 'proxy' | 'direct'
+export type ProviderChoice = 'global' | 'proxy' | 'direct' | 'system'
 
 export interface ProviderDraft {
   choice: ProviderChoice
@@ -14,7 +14,7 @@ export interface ProviderDraft {
 }
 
 export interface Draft {
-  global: { enabled: boolean; url: string; noProxyText: string }
+  global: { enabled: boolean; mode?: 'proxy' | 'system'; url: string; noProxyText: string }
   providers: Record<string, ProviderDraft>
 }
 
@@ -31,6 +31,7 @@ export function draftFrom(value: unknown): Draft {
   const draft: Draft = {
     global: {
       enabled: global.enabled === true,
+      ...(global.mode === 'system' ? { mode: 'system' as const } : {}),
       url: typeof global.url === 'string' ? global.url : '',
       noProxyText: Array.isArray(global.noProxy) ? global.noProxy.filter(item => typeof item === 'string').join('\n') : '',
     },
@@ -40,7 +41,7 @@ export function draftFrom(value: unknown): Draft {
     if (!isObject(raw)) continue
     const url = typeof raw.url === 'string' ? raw.url : ''
     const enabled = raw.enabled !== false
-    const choice: ProviderChoice = !enabled ? 'global' : raw.mode === 'direct' ? 'direct' : 'proxy'
+    const choice: ProviderChoice = !enabled ? 'global' : raw.mode === 'direct' ? 'direct' : raw.mode === 'system' ? 'system' : 'proxy'
     draft.providers[id] = { choice, url }
   }
   return draft
@@ -60,6 +61,7 @@ export function settingsFrom(draft: Draft): ProxySettings {
   return {
     global: {
       enabled: draft.global.enabled,
+      ...(draft.global.mode === 'system' ? { mode: 'system' as const } : {}),
       url: draft.global.url.trim(),
       noProxy: splitHosts(draft.global.noProxyText),
     },
@@ -85,7 +87,7 @@ export function validate(draft: Draft): Record<string, string> {
       errors[key] = (error as Error).message
     }
   }
-  if (draft.global.enabled) check('global', draft.global.url)
+  if (draft.global.enabled && draft.global.mode !== 'system') check('global', draft.global.url)
   for (const [id, entry] of Object.entries(draft.providers)) {
     if (entry.choice === 'proxy') check(id, entry.url)
   }

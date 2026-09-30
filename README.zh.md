@@ -115,3 +115,23 @@ git push --follow-tags    # 推送 vX.Y.Z tag 即触发发布
 ## License
 
 MIT
+
+
+### 系统代理与选择菜单（0.4.0）
+
+全局代理方式可选择「关闭（沿用启动设置）」「系统代理（自动检测）」或「手动代理」。每个提供商也可独立选择系统代理，优先于全局代理。菜单采用与 dsh-free-search 一致的浮层卡片、悬停高亮和选中勾号，支持方向键、Home/End、Enter、Esc 和 Tab。
+
+系统检测按 HTTPS_PROXY / https_proxy、HTTP_PROXY / http_proxy、ALL_PROXY / all_proxy 的顺序尝试可用的 HTTP(S) 地址，再读取 Windows 当前用户 Internet 设置或 macOS scutil 设置。Linux 使用环境变量。插件保留启动环境快照，避免把自身安装的代理误当成系统代理；系统设置每 30 秒重新检测，页面也可点击「重新检测」。只支持 HTTP(S)，不执行 PAC/WPAD，也不使用 SOCKS 端口。检测不到时，全局恢复启动设置；提供商回退到全局路由，并记录警告。显示和日志遮蔽代理认证信息。
+
+```yaml
+global:
+  enabled: true
+  mode: system
+  noProxy: []
+providers:
+  openai:
+    enabled: true
+    mode: system
+```
+
+旧配置省略 mode 时继续使用手动代理，默认不启用全局代理。

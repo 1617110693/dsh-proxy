@@ -60,3 +60,22 @@ for (const variant of ['dsh-http-proxy', 'undici fallback'] as const) {
     })
   })
 }
+
+
+it('redetects system proxy, switches routes, and releases when unavailable', async () => {
+  let detected: { url: string; source: string } | null = { url: a.url, source: 'test' }
+  const global = new GlobalProxyLayer({ info: () => {}, warn: () => {}, detectSystemProxy: async () => detected })
+  const config = { enabled: true, mode: 'system' as const, url: '', noProxy: [] }
+  try {
+    await global.apply(config)
+    await fetch('http://api.example.test/')
+    expect(a.hits).toEqual(['api.example.test'])
+    detected = { url: b.url, source: 'test' }
+    await global.apply(config)
+    await fetch('http://api.example.test/')
+    expect(b.hits).toEqual(['api.example.test'])
+    detected = null
+    await global.apply(config)
+    await expect(fetch('http://api.example.test/')).rejects.toThrow()
+  } finally { await global.close() }
+})

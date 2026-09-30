@@ -26,6 +26,8 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { Config, type ProviderProxyConfig, type ProxySettings } from './config.ts'
 import { acquireFetchRouter } from './fetch-router.ts'
+import { detectSystemProxy } from './system-proxy.ts'
+import { statusRoute } from './status-route.ts'
 import { GlobalProxyLayer } from './global.ts'
 import { createRouteTable, type RouteTable } from './provider-routes.ts'
 
@@ -52,6 +54,7 @@ interface ProxyContext {
   on(name: string, listener: (...args: any[]) => any, options?: { global?: boolean }): () => void
   inject(deps: string[], callback: (ctx: ProxyContext) => void): unknown
   logger(name: string): { info(message: string): void; warn(message: string): void }
+  webServer: { register(route: ReturnType<typeof statusRoute>): () => void }
   llm: LlmService
 }
 
@@ -66,7 +69,11 @@ function snapshot(config: Config): ProxySettings {
 export function apply(context: Context, config: Config): void {
   const ctx = context as unknown as ProxyContext
   const logger = ctx.logger('dsh-proxy')
+  // Keep the launch environment separate from proxy variables installed by this plugin.
+  const launchEnv = { ...process.env }
+  const detect = () => detectSystemProxy({ env: launchEnv })
   const global = new GlobalProxyLayer({
+    detectSystemProxy: detect,
     info: message => { logger.info(message) },
     warn: message => { logger.warn(message) },
   })
@@ -92,9 +99,24 @@ export function apply(context: Context, config: Config): void {
     retired.add(timer)
   }
 
+  let generation = 0
+  let stopped = false
+  let resolvedKey = ''
   const reconcile = (): void => {
     const settings = snapshot(config)
-    updateProviders(settings.providers)
+    const current = ++generation
+    if (Object.values(settings.providers).some(entry => entry.enabled && entry.mode === 'system')) {
+      void detect().then(system => {
+        if (stopped || current !== generation) return
+        const resolved = Object.fromEntries(Object.entries(settings.providers).map(([id, entry]) =>
+          [id, entry.mode === 'system' ? { ...entry, mode: 'proxy' as const, url: system?.url ?? '' } : entry]))
+        const key = JSON.stringify(resolved)
+        if (key !== resolvedKey) { resolvedKey = key; updateProviders(resolved) }
+      }).catch(error => logger.warn(`系统代理检测失败：${String(error)}`))
+    } else {
+      resolvedKey = ''
+      updateProviders(settings.providers)
+    }
     global.apply(settings.global).catch((error: unknown) => {
       logger.warn(`全局代理安装失败：${error instanceof Error ? error.message : String(error)}`)
     })
@@ -103,13 +125,21 @@ export function apply(context: Context, config: Config): void {
   ctx.effect(() => {
     reconcile()
     const stop = ctx.on('loader/volatile-update', () => { reconcile() })
+    const poll = setInterval(() => { if (snapshot(config).global.mode === 'system' || Object.values(snapshot(config).providers).some(entry => entry.enabled && entry.mode === 'system')) reconcile() }, 30_000)
+    poll.unref?.()
     return async () => {
+      stopped = true
       stop()
+      clearInterval(poll)
       for (const timer of retired) clearTimeout(timer)
       retired.clear()
       await Promise.allSettled([global.close(), table.close()])
     }
   }, 'dsh-proxy: routes')
+
+  ctx.inject(['webServer'], serverCtx => {
+    serverCtx.effect(() => serverCtx.webServer.register(statusRoute(detect)), 'dsh-proxy: system proxy status')
+  })
 
   // The provider layer needs the llm service; without it only the global layer runs.
   ctx.inject(['llm'], (llmCtx) => {

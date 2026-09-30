@@ -120,3 +120,23 @@ describe('@copylee/dsh-proxy', () => {
     await ctx.dispose()
   })
 })
+
+
+it('routes provider system mode independently of the global manual proxy', async () => {
+  const before = process.env.HTTPS_PROXY
+  process.env.HTTPS_PROXY = providerProxy.url
+  const ctx = fakeContext()
+  try {
+    apply(ctx, Config({ global: { enabled: true, url: globalProxy.url }, providers: { openai: { mode: 'system', url: '' } } }))
+    await tick(200)
+    await collect(ctx.stream({ provider: 'openai' }, adapterStream('http://api.openai.test/')))
+    expect(providerProxy.hits).toEqual(['api.openai.test'])
+    expect(globalProxy.hits).toEqual([])
+    await fetch('http://search.example.test/')
+    expect(globalProxy.hits).toEqual(['search.example.test'])
+  } finally {
+    await ctx.dispose()
+    if (before === undefined) delete process.env.HTTPS_PROXY
+    else process.env.HTTPS_PROXY = before
+  }
+})

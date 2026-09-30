@@ -115,3 +115,23 @@ The workflow checks that the tag matches `package.json`, runs typecheck, tests a
 ## License
 
 MIT
+
+
+### System proxy and menus (0.4.0)
+
+The global selector offers Off (use launch settings), System proxy (auto-detect), and Manual proxy. Each provider can also select its own system proxy, overriding the global route. Menus follow dsh-free-search's floating cards, hover highlights, and selection checkmarks, with Arrow, Home/End, Enter, Esc, and Tab keyboard support.
+
+Detection tries valid HTTP(S) values from HTTPS_PROXY / https_proxy, HTTP_PROXY / http_proxy, and ALL_PROXY / all_proxy in that order, then Windows current-user Internet Settings or macOS scutil. Linux uses environment variables. A launch environment snapshot prevents the plugin's own installed proxy from feeding back into detection. OS settings are checked every 30 seconds; the settings page also offers Detect again. SOCKS, PAC, and WPAD are not supported. When detection finds no usable proxy, the global layer restores launch settings and provider overrides fall back to the global route with a warning. Status and logs mask proxy credentials.
+
+```yaml
+global:
+  enabled: true
+  mode: system
+  noProxy: []
+providers:
+  openai:
+    enabled: true
+    mode: system
+```
+
+Existing configurations without mode continue using their manual proxy. The global proxy remains disabled by default.

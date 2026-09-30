@@ -29,6 +29,13 @@ describe('settings page model', () => {
     expect(draftFrom(undefined)).toEqual({ global: { enabled: false, url: '', noProxyText: '' }, providers: {} })
   })
 
+  it('round-trips system mode without requiring a manual URL', () => {
+    const stored = { global: { enabled: true, mode: 'system', url: '', noProxy: [] }, providers: { openai: { enabled: true, mode: 'system', url: '' } } }
+    const draft = draftFrom(stored)
+    expect(settingsFrom(draft)).toEqual(stored)
+    expect(validate(draft)).toEqual({})
+  })
+
   it('splits NO_PROXY text', () => {
     expect(splitHosts('a.example, b.example\nc.example;a.example')).toEqual(['a.example', 'b.example', 'c.example'])
   })

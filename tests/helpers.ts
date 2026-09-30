@@ -95,6 +95,7 @@ export function fakeContext() {
   }
   const ctx: any = {
     llm,
+    webServer: { register: () => () => {} },
     logs,
     effect(execute: () => (() => unknown) | void) {
       const dispose = execute()

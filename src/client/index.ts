@@ -9,6 +9,7 @@
  * the only import taken from the host's module table.
  */
 import * as React from 'react'
+import { Select, selectCss } from './select.ts'
 import { en, zh, type LocaleKey } from './locales.ts'
 import {
   draftFrom, isProviderId, providerRows, settingsFrom, validate,
@@ -50,6 +51,7 @@ type T = (key: LocaleKey) => string
 
 interface Api {
   load(): Promise<{ writable: boolean; view: NamespaceView | undefined; providers: ProviderRow[]; suggestions: ProviderRow[] }>
+  detect(): Promise<{ url: string; source: string } | null>
   save(draft: Draft, revision: number): Promise<void>
   subscribe(listener: () => void): () => void
   t: T
@@ -66,7 +68,7 @@ const S: Record<string, React.CSSProperties> = {
   hint: { margin: 0, fontSize: 12, lineHeight: 1.55, color: 'var(--dsw-alias-label-tertiary, #888)' },
   label: { display: 'grid', gap: 6, fontSize: 13, fontWeight: 500 },
   input: { boxSizing: 'border-box', width: '100%', padding: '8px 10px', fontSize: 13, borderRadius: 'var(--dsw-radius-md, 8px)', border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,.3))', background: 'transparent', color: 'inherit', fontFamily: 'var(--ds-font-family-code, monospace)' },
-  row: { display: 'grid', gridTemplateColumns: 'minmax(120px, 1fr) 150px minmax(180px, 1.4fr)', gap: 10, alignItems: 'center', padding: '8px 0', borderTop: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,.15))' },
+  row: { display: 'grid', gridTemplateColumns: 'minmax(100px, 1fr) 200px minmax(160px, 1.4fr)', gap: 10, alignItems: 'center', padding: '8px 0', borderTop: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,.15))' },
   providerName: { fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' },
   providerId: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #888)', fontFamily: 'var(--ds-font-family-code, monospace)' },
   error: { fontSize: 12, color: 'var(--dsw-alias-state-error-primary, #d33)' },
@@ -90,6 +92,18 @@ function ProxySection({ api }: { api: Api }) {
   const [dirty, setDirty] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
   const [newId, setNewId] = React.useState('')
+  const [system, setSystem] = React.useState<{ url: string; source: string } | null>(null)
+  const [detectError, setDetectError] = React.useState(false)
+  const refreshSystem = React.useCallback(async () => {
+    try { setSystem(await api.detect()); setDetectError(false) } catch { setDetectError(true) }
+  }, [api])
+  const needsSystem = (draft.global.enabled && draft.global.mode === 'system') || Object.values(draft.providers).some(entry => entry.choice === 'system')
+  React.useEffect(() => {
+    if (!needsSystem) return
+    void refreshSystem()
+    const timer = setInterval(() => { void refreshSystem() }, 30_000)
+    return () => clearInterval(timer)
+  }, [needsSystem, refreshSystem])
   const dirtyRef = React.useRef(false)
   dirtyRef.current = dirty
 
@@ -152,6 +166,7 @@ function ProxySection({ api }: { api: Api }) {
   const urlOf = (id: string): string => draft.providers[id]?.url ?? ''
 
   return h('div', { style: S.page },
+    h('style', null, selectCss),
     h('div', null,
       h('h2', { style: S.title }, t('title')),
       h('p', { style: S.subtitle }, t('subtitle')),
@@ -163,21 +178,27 @@ function ProxySection({ api }: { api: Api }) {
     h('section', { style: S.card },
       h('h3', { style: S.cardTitle }, t('globalTitle')),
       h('p', { style: S.hint }, t('globalHint')),
-      h('label', { style: S.toggle },
-        h('input', {
-          type: 'checkbox', checked: draft.global.enabled, disabled,
-          onChange: (event: React.ChangeEvent<HTMLInputElement>) => { const on = event.target.checked; edit(next => { next.global.enabled = on }) },
+      h('div', { style: S.label },
+        t('proxyMode'),
+        h(Select, {
+          label: t('proxyMode'), disabled,
+          value: !draft.global.enabled ? 'off' : draft.global.mode === 'system' ? 'system' : 'proxy',
+          options: [{ value: 'off', label: t('off') }, { value: 'system', label: t('system') }, { value: 'proxy', label: t('manual') }],
+          onChange: (value: string) => edit(next => { next.global.enabled = value !== 'off'; next.global.mode = value === 'system' ? 'system' : 'proxy' }),
         }),
-        t('enabled'),
       ),
-      h('label', { style: S.label },
+      draft.global.enabled && draft.global.mode === 'system' ? h('div', { style: S.actions },
+        h('span', { style: detectError ? S.error : S.hint, role: 'status' }, detectError ? t('detectFailed') : system ? `${t('detected')}${system.url} (${system.source})` : t('notDetected')),
+        h('button', { type: 'button', style: S.secondary, onClick: () => { void refreshSystem() } }, t('refresh')),
+      ) : null,
+      draft.global.mode !== 'system' ? h('label', { style: S.label },
         t('proxyUrl'),
         h('input', {
           style: S.input, value: draft.global.url, placeholder: t('proxyUrlPlaceholder'), disabled, spellCheck: false,
           onChange: (event: React.ChangeEvent<HTMLInputElement>) => { const value = event.target.value; edit(next => { next.global.url = value }) },
         }),
         errors.global === undefined ? null : h('span', { style: S.error }, t('invalid') + errors.global),
-      ),
+      ) : null,
       h('label', { style: S.label },
         t('noProxy'),
         h('textarea', {
@@ -198,17 +219,14 @@ function ProxySection({ api }: { api: Api }) {
           h('div', { style: S.providerName, title: row.name }, row.name),
           h('div', { style: S.providerId }, row.id),
         ),
-        h('select', {
-          style: { ...S.input, fontFamily: 'inherit' }, value: choiceOf(row.id), disabled,
-          onChange: (event: React.ChangeEvent<HTMLSelectElement>) => {
-            const choice = event.target.value as ProviderChoice
+        h(Select, {
+          label: `${row.name} ${t('proxyMode')}`, value: choiceOf(row.id), disabled,
+          options: [{ value: 'global', label: t('followGlobal') }, { value: 'system', label: t('system') }, { value: 'proxy', label: t('useProxy') }, { value: 'direct', label: t('direct') }],
+          onChange: (value: string) => {
+            const choice = value as ProviderChoice
             edit(next => { next.providers[row.id] = { choice, url: next.providers[row.id]?.url ?? '' } })
           },
-        },
-          h('option', { value: 'global' }, t('followGlobal')),
-          h('option', { value: 'proxy' }, t('useProxy')),
-          h('option', { value: 'direct' }, t('direct')),
-        ),
+        }),
         h('div', null,
           choiceOf(row.id) === 'proxy'
             ? h('input', {
@@ -216,6 +234,7 @@ function ProxySection({ api }: { api: Api }) {
               onChange: (event: React.ChangeEvent<HTMLInputElement>) => { const value = event.target.value; edit(next => { next.providers[row.id] = { choice: 'proxy', url: value } }) },
             })
             : null,
+          choiceOf(row.id) === 'system' ? h('span', { style: S.hint }, detectError ? t('detectFailed') : system ? `${t('detected')}${system.url}` : t('notDetected')) : null,
           errors[row.id] === undefined ? null : h('div', { style: S.error }, t('invalid') + errors[row.id]),
         ),
       )),
@@ -257,6 +276,11 @@ function unwrap<V>(result: RemoteResult<V>): V {
 function createApi(ctx: ClientContext, t: T): Api {
   return {
     t,
+    async detect() {
+      const response = await fetch('/api/dsh-proxy/proxy-status', { method: 'POST', credentials: 'same-origin' })
+      if (!response.ok) throw new Error('System proxy detection unavailable')
+      return unwrap(await response.json() as RemoteResult<{ system: { url: string; source: string } | null }>).system
+    },
     async load() {
       const [described, registered, declared] = await Promise.all([
         ctx.remote.settings.describe(),

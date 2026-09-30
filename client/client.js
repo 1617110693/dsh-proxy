@@ -28,6 +28,170 @@ window.__ModuleLoader__.load({
 		//#endregion
 		let react = require("react");
 		react = __toESM(react, 1);
+		//#region src/client/select.ts
+		const h$1 = react.createElement;
+		/** Menu appearance and fixed-position behavior follow dsh-free-search. */
+		const selectCss = `
+.dshp-select{box-sizing:border-box;width:100%;height:36px;padding:0 12px;display:flex;align-items:center;gap:8px;text-align:left;border:1px solid var(--dsw-alias-border-l4,rgba(127,127,127,.3));border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-bg-layer-3,transparent);color:inherit;font:inherit;font-size:13px;cursor:pointer}
+.dshp-select:hover{border-color:var(--dsw-alias-border-l3,#888)}
+.dshp-select:focus-visible,.dshp-select[aria-expanded=true]{outline:2px solid var(--dsw-alias-state-business-primary,#2f7cff);outline-offset:2px}
+.dshp-select:disabled{opacity:.5;cursor:default}
+.dshp-menu{position:fixed;z-index:1100;box-sizing:border-box;padding:4px;overflow-y:auto;overscroll-behavior:contain;border-radius:var(--dsw-radius-lg,12px);background:var(--dsw-menu-surface-fill,var(--dsw-alias-bg-layer-1,#fff));color:var(--dsw-alias-label-primary,#222);backdrop-filter:var(--dsw-menu-backdrop-filter,none);box-shadow:var(--dsw-elevation-prominent,0 10px 32px rgba(0,0,0,.16),0 0 0 .5px rgba(0,0,0,.1))}
+.dshp-option{display:flex;align-items:center;gap:8px;min-height:34px;padding:6px 8px;box-sizing:border-box;border-radius:var(--dsw-radius-md,8px);font-size:13px;line-height:20px;cursor:pointer;user-select:none}
+.dshp-option[data-active=true]{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12))}
+`;
+		function Select({ options, value, disabled, label, onChange }) {
+			const id = react.useId();
+			const trigger = react.useRef(null);
+			const list = react.useRef(null);
+			const [open, setOpen] = react.useState(false);
+			const [active, setActive] = react.useState(0);
+			const [pos, setPos] = react.useState({});
+			const selected = options.findIndex((option) => option.value === value);
+			const place = react.useCallback(() => {
+				const r = trigger.current?.getBoundingClientRect();
+				if (!r) return;
+				const below = window.innerHeight - r.bottom - 12;
+				const above = r.top - 12;
+				const up = below < Math.min(options.length * 34 + 8, 220) && above > below;
+				const width = Math.min(Math.max(r.width, 180), 440, window.innerWidth - 16);
+				setPos({
+					left: Math.max(8, Math.min(r.left, window.innerWidth - width - 8)),
+					width,
+					maxHeight: Math.max(0, Math.min(360, (up ? above : below) - 4)),
+					...up ? { bottom: window.innerHeight - r.top + 4 } : { top: r.bottom + 4 }
+				});
+			}, [options.length]);
+			const close = (refocus = false) => {
+				setOpen(false);
+				if (refocus) trigger.current?.focus();
+			};
+			const choose = (index) => {
+				if (!disabled && options[index]) onChange(options[index].value);
+				close(true);
+			};
+			const show = () => {
+				if (!disabled) {
+					place();
+					setActive(Math.max(0, selected));
+					setOpen(true);
+				}
+			};
+			react.useEffect(() => {
+				if (disabled) setOpen(false);
+			}, [disabled]);
+			react.useEffect(() => {
+				if (!open) return;
+				const pointer = (e) => {
+					if (!list.current?.contains(e.target) && !trigger.current?.contains(e.target)) setOpen(false);
+				};
+				const scroll = (e) => {
+					if (!list.current?.contains(e.target)) place();
+				};
+				document.addEventListener("pointerdown", pointer, true);
+				window.addEventListener("scroll", scroll, true);
+				window.addEventListener("resize", place);
+				return () => {
+					document.removeEventListener("pointerdown", pointer, true);
+					window.removeEventListener("scroll", scroll, true);
+					window.removeEventListener("resize", place);
+				};
+			}, [open, place]);
+			react.useEffect(() => {
+				list.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
+			}, [active, open]);
+			return h$1("div", { style: { minWidth: 0 } }, h$1("button", {
+				ref: trigger,
+				type: "button",
+				className: "dshp-select",
+				disabled,
+				role: "combobox",
+				"aria-label": label,
+				"aria-haspopup": "listbox",
+				"aria-expanded": open,
+				"aria-controls": open ? `${id}-list` : void 0,
+				"aria-activedescendant": open ? `${id}-${active}` : void 0,
+				onBlur: () => close(),
+				onClick: () => open ? close() : show(),
+				onKeyDown: (e) => {
+					if (disabled) return;
+					if (!open) {
+						if ([
+							"ArrowDown",
+							"ArrowUp",
+							"Enter",
+							" "
+						].includes(e.key)) {
+							e.preventDefault();
+							show();
+						}
+					} else if (e.key === "Escape") {
+						e.preventDefault();
+						close(true);
+					} else if (e.key === "Tab") close();
+					else if ([
+						"ArrowDown",
+						"ArrowUp",
+						"Home",
+						"End"
+					].includes(e.key)) {
+						e.preventDefault();
+						setActive((i) => e.key === "Home" ? 0 : e.key === "End" ? options.length - 1 : (i + (e.key === "ArrowDown" ? 1 : -1) + options.length) % options.length);
+					} else if (["Enter", " "].includes(e.key)) {
+						e.preventDefault();
+						choose(active);
+					}
+				}
+			}, h$1("span", { style: {
+				flex: 1,
+				minWidth: 0,
+				overflow: "hidden",
+				textOverflow: "ellipsis",
+				whiteSpace: "nowrap"
+			} }, options[selected]?.label), h$1("svg", {
+				width: 14,
+				height: 14,
+				viewBox: "0 0 16 16",
+				"aria-hidden": true,
+				style: { transform: open ? "rotate(180deg)" : void 0 }
+			}, h$1("path", {
+				d: "M4 6l4 4 4-4",
+				fill: "none",
+				stroke: "currentColor",
+				strokeWidth: 1.6
+			}))), open ? h$1("div", {
+				ref: list,
+				id: `${id}-list`,
+				role: "listbox",
+				"aria-label": label,
+				className: "dshp-menu",
+				style: pos
+			}, ...options.map((option, i) => h$1("div", {
+				key: option.value,
+				id: `${id}-${i}`,
+				role: "option",
+				"aria-selected": i === selected,
+				"data-index": i,
+				"data-active": i === active,
+				className: "dshp-option",
+				onPointerMove: () => setActive(i),
+				onPointerDown: (e) => e.preventDefault(),
+				onClick: () => choose(i)
+			}, h$1("span", { style: { flex: 1 } }, option.label), h$1("span", { style: { width: 14 } }, i === selected ? h$1("svg", {
+				width: 14,
+				height: 14,
+				viewBox: "0 0 16 16",
+				"aria-hidden": true
+			}, h$1("path", {
+				d: "M3.5 8.5 6.5 11.5 12.5 4.5",
+				fill: "none",
+				stroke: "currentColor",
+				strokeWidth: 1.7,
+				strokeLinecap: "round",
+				strokeLinejoin: "round"
+			})) : null)))) : null);
+		}
+		//#endregion
 		//#region src/client/locales.ts
 		/** Settings page copy. */
 		const zh = {
@@ -37,6 +201,14 @@ window.__ModuleLoader__.load({
 			globalTitle: "全局代理",
 			globalHint: "开启后，模型请求、联网搜索、网页抓取、HTTP MCP 以及 Agent 启动的命令都走这个代理。关闭时沿用启动时的 HTTP(S)_PROXY 环境变量。",
 			enabled: "启用",
+			proxyMode: "代理方式",
+			off: "关闭（沿用启动设置）",
+			system: "系统代理（自动检测）",
+			manual: "手动代理",
+			detected: "检测到系统代理：",
+			notDetected: "未检测到可用的系统 HTTP(S) 代理；将沿用启动设置。",
+			detectFailed: "系统代理检测不可用，请重试。",
+			refresh: "重新检测",
 			proxyUrl: "代理地址",
 			proxyUrlPlaceholder: "http://127.0.0.1:7890",
 			noProxy: "不走代理的主机",
@@ -69,6 +241,14 @@ window.__ModuleLoader__.load({
 			globalTitle: "Global proxy",
 			globalHint: "When on, model requests, web search, web fetch, HTTP MCP and commands the agent runs all use this proxy. When off, the HTTP(S)_PROXY variables from launch apply.",
 			enabled: "Enabled",
+			proxyMode: "Proxy mode",
+			off: "Off (use launch settings)",
+			system: "System proxy (auto-detect)",
+			manual: "Manual proxy",
+			detected: "Detected system proxy: ",
+			notDetected: "No system HTTP(S) proxy detected; launch settings apply.",
+			detectFailed: "System proxy detection unavailable. Please retry.",
+			refresh: "Detect again",
 			proxyUrl: "Proxy URL",
 			proxyUrlPlaceholder: "http://127.0.0.1:7890",
 			noProxy: "Hosts that bypass the proxy",
@@ -138,6 +318,7 @@ window.__ModuleLoader__.load({
 			const draft = {
 				global: {
 					enabled: global.enabled === true,
+					...global.mode === "system" ? { mode: "system" } : {},
 					url: typeof global.url === "string" ? global.url : "",
 					noProxyText: Array.isArray(global.noProxy) ? global.noProxy.filter((item) => typeof item === "string").join("\n") : ""
 				},
@@ -146,7 +327,7 @@ window.__ModuleLoader__.load({
 			for (const [id, raw] of Object.entries(providers)) {
 				if (!isObject(raw)) continue;
 				const url = typeof raw.url === "string" ? raw.url : "";
-				const choice = !(raw.enabled !== false) ? "global" : raw.mode === "direct" ? "direct" : "proxy";
+				const choice = !(raw.enabled !== false) ? "global" : raw.mode === "direct" ? "direct" : raw.mode === "system" ? "system" : "proxy";
 				draft.providers[id] = {
 					choice,
 					url
@@ -174,6 +355,7 @@ window.__ModuleLoader__.load({
 			return {
 				global: {
 					enabled: draft.global.enabled,
+					...draft.global.mode === "system" ? { mode: "system" } : {},
 					url: draft.global.url.trim(),
 					noProxy: splitHosts(draft.global.noProxyText)
 				},
@@ -197,7 +379,7 @@ window.__ModuleLoader__.load({
 					errors[key] = error.message;
 				}
 			};
-			if (draft.global.enabled) check("global", draft.global.url);
+			if (draft.global.enabled && draft.global.mode !== "system") check("global", draft.global.url);
 			for (const [id, entry] of Object.entries(draft.providers)) if (entry.choice === "proxy") check(id, entry.url);
 			return errors;
 		}
@@ -307,7 +489,7 @@ window.__ModuleLoader__.load({
 			},
 			row: {
 				display: "grid",
-				gridTemplateColumns: "minmax(120px, 1fr) 150px minmax(180px, 1.4fr)",
+				gridTemplateColumns: "minmax(100px, 1fr) 200px minmax(160px, 1.4fr)",
 				gap: 10,
 				alignItems: "center",
 				padding: "8px 0",
@@ -380,6 +562,25 @@ window.__ModuleLoader__.load({
 			const [dirty, setDirty] = react.useState(false);
 			const [saving, setSaving] = react.useState(false);
 			const [newId, setNewId] = react.useState("");
+			const [system, setSystem] = react.useState(null);
+			const [detectError, setDetectError] = react.useState(false);
+			const refreshSystem = react.useCallback(async () => {
+				try {
+					setSystem(await api.detect());
+					setDetectError(false);
+				} catch {
+					setDetectError(true);
+				}
+			}, [api]);
+			const needsSystem = draft.global.enabled && draft.global.mode === "system" || Object.values(draft.providers).some((entry) => entry.choice === "system");
+			react.useEffect(() => {
+				if (!needsSystem) return;
+				refreshSystem();
+				const timer = setInterval(() => {
+					refreshSystem();
+				}, 3e4);
+				return () => clearInterval(timer);
+			}, [needsSystem, refreshSystem]);
 			const dirtyRef = react.useRef(false);
 			dirtyRef.current = dirty;
 			const load = react.useCallback(async (resetDraft) => {
@@ -447,17 +648,38 @@ window.__ModuleLoader__.load({
 			});
 			const choiceOf = (id) => draft.providers[id]?.choice ?? "global";
 			const urlOf = (id) => draft.providers[id]?.url ?? "";
-			return h("div", { style: S.page }, h("div", null, h("h2", { style: S.title }, t("title")), h("p", { style: S.subtitle }, t("subtitle"))), view === void 0 ? h("div", { style: S.error }, t("notMounted")) : null, view !== void 0 && !writable ? h("div", { style: S.error }, t("readOnly")) : null, h("section", { style: S.card }, h("h3", { style: S.cardTitle }, t("globalTitle")), h("p", { style: S.hint }, t("globalHint")), h("label", { style: S.toggle }, h("input", {
-				type: "checkbox",
-				checked: draft.global.enabled,
+			return h("div", { style: S.page }, h("style", null, selectCss), h("div", null, h("h2", { style: S.title }, t("title")), h("p", { style: S.subtitle }, t("subtitle"))), view === void 0 ? h("div", { style: S.error }, t("notMounted")) : null, view !== void 0 && !writable ? h("div", { style: S.error }, t("readOnly")) : null, h("section", { style: S.card }, h("h3", { style: S.cardTitle }, t("globalTitle")), h("p", { style: S.hint }, t("globalHint")), h("div", { style: S.label }, t("proxyMode"), h(Select, {
+				label: t("proxyMode"),
 				disabled,
-				onChange: (event) => {
-					const on = event.target.checked;
-					edit((next) => {
-						next.global.enabled = on;
-					});
+				value: !draft.global.enabled ? "off" : draft.global.mode === "system" ? "system" : "proxy",
+				options: [
+					{
+						value: "off",
+						label: t("off")
+					},
+					{
+						value: "system",
+						label: t("system")
+					},
+					{
+						value: "proxy",
+						label: t("manual")
+					}
+				],
+				onChange: (value) => edit((next) => {
+					next.global.enabled = value !== "off";
+					next.global.mode = value === "system" ? "system" : "proxy";
+				})
+			})), draft.global.enabled && draft.global.mode === "system" ? h("div", { style: S.actions }, h("span", {
+				style: detectError ? S.error : S.hint,
+				role: "status"
+			}, detectError ? t("detectFailed") : system ? `${t("detected")}${system.url} (${system.source})` : t("notDetected")), h("button", {
+				type: "button",
+				style: S.secondary,
+				onClick: () => {
+					refreshSystem();
 				}
-			}), t("enabled")), h("label", { style: S.label }, t("proxyUrl"), h("input", {
+			}, t("refresh"))) : null, draft.global.mode !== "system" ? h("label", { style: S.label }, t("proxyUrl"), h("input", {
 				style: S.input,
 				value: draft.global.url,
 				placeholder: t("proxyUrlPlaceholder"),
@@ -469,7 +691,7 @@ window.__ModuleLoader__.load({
 						next.global.url = value;
 					});
 				}
-			}), errors.global === void 0 ? null : h("span", { style: S.error }, t("invalid") + errors.global)), h("label", { style: S.label }, t("noProxy"), h("textarea", {
+			}), errors.global === void 0 ? null : h("span", { style: S.error }, t("invalid") + errors.global)) : null, h("label", { style: S.label }, t("noProxy"), h("textarea", {
 				style: {
 					...S.input,
 					minHeight: 64,
@@ -490,15 +712,30 @@ window.__ModuleLoader__.load({
 			}, h("div", null, h("div", {
 				style: S.providerName,
 				title: row.name
-			}, row.name), h("div", { style: S.providerId }, row.id)), h("select", {
-				style: {
-					...S.input,
-					fontFamily: "inherit"
-				},
+			}, row.name), h("div", { style: S.providerId }, row.id)), h(Select, {
+				label: `${row.name} ${t("proxyMode")}`,
 				value: choiceOf(row.id),
 				disabled,
-				onChange: (event) => {
-					const choice = event.target.value;
+				options: [
+					{
+						value: "global",
+						label: t("followGlobal")
+					},
+					{
+						value: "system",
+						label: t("system")
+					},
+					{
+						value: "proxy",
+						label: t("useProxy")
+					},
+					{
+						value: "direct",
+						label: t("direct")
+					}
+				],
+				onChange: (value) => {
+					const choice = value;
 					edit((next) => {
 						next.providers[row.id] = {
 							choice,
@@ -506,7 +743,7 @@ window.__ModuleLoader__.load({
 						};
 					});
 				}
-			}, h("option", { value: "global" }, t("followGlobal")), h("option", { value: "proxy" }, t("useProxy")), h("option", { value: "direct" }, t("direct"))), h("div", null, choiceOf(row.id) === "proxy" ? h("input", {
+			}), h("div", null, choiceOf(row.id) === "proxy" ? h("input", {
 				style: S.input,
 				value: urlOf(row.id),
 				placeholder: t("proxyUrlPlaceholder"),
@@ -521,7 +758,7 @@ window.__ModuleLoader__.load({
 						};
 					});
 				}
-			}) : null, errors[row.id] === void 0 ? null : h("div", { style: S.error }, t("invalid") + errors[row.id])))), h("div", { style: S.addRow }, h("input", {
+			}) : null, choiceOf(row.id) === "system" ? h("span", { style: S.hint }, detectError ? t("detectFailed") : system ? `${t("detected")}${system.url}` : t("notDetected")) : null, errors[row.id] === void 0 ? null : h("div", { style: S.error }, t("invalid") + errors[row.id])))), h("div", { style: S.addRow }, h("input", {
 				style: {
 					...S.input,
 					flex: 1
@@ -580,6 +817,14 @@ window.__ModuleLoader__.load({
 		function createApi(ctx, t) {
 			return {
 				t,
+				async detect() {
+					const response = await fetch("/api/dsh-proxy/proxy-status", {
+						method: "POST",
+						credentials: "same-origin"
+					});
+					if (!response.ok) throw new Error("System proxy detection unavailable");
+					return unwrap(await response.json()).system;
+				},
 				async load() {
 					const [described, registered, declared] = await Promise.all([
 						ctx.remote.settings.describe(),

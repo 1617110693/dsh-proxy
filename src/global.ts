@@ -10,6 +10,7 @@
  * layer always disposes the previous install before making the next one.
  */
 import type { GlobalProxyConfig } from './config.ts'
+import { detectSystemProxy, type SystemProxy } from './system-proxy.ts'
 import { parseProxyUrl, redactProxyUrl } from './proxy-url.ts'
 
 type Dispose = () => Promise<void>
@@ -25,6 +26,7 @@ export interface HttpProxyModule {
 export interface GlobalLayerOptions {
   /** Loads the Harness's proxy package; resolves `undefined` when the host does not ship it. */
   loadHttpProxy?: () => Promise<HttpProxyModule | undefined>
+  detectSystemProxy?: () => Promise<SystemProxy | null>
   info(message: string): void
   warn(message: string): void
 }
@@ -99,6 +101,11 @@ export class GlobalProxyLayer {
   }
 
   private async reconcile(config: GlobalProxyConfig): Promise<void> {
+    if (config.enabled && config.mode === 'system') {
+      const detected = await (this.options.detectSystemProxy ?? detectSystemProxy)()
+      if (!detected) this.options.warn('未检测到可用的系统 HTTP(S) 代理，恢复启动时的代理设置')
+      config = { ...config, url: detected?.url ?? '' }
+    }
     const key = keyOf(config)
     if (key === this.key) return
     await this.release()
