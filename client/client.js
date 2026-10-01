@@ -28,6 +28,142 @@ window.__ModuleLoader__.load({
 		//#endregion
 		let react = require("react");
 		react = __toESM(react, 1);
+		//#region src/client/provider-picker.ts
+		const h$2 = react.createElement;
+		/** Editable provider suggestions, using the same floating menu as proxy modes. */
+		function ProviderPicker({ value, options, disabled, label, placeholder, onChange }) {
+			const id = react.useId();
+			const input = react.useRef(null);
+			const list = react.useRef(null);
+			const [open, setOpen] = react.useState(false);
+			const [active, setActive] = react.useState(-1);
+			const [pos, setPos] = react.useState({});
+			const query = value.trim().toLowerCase();
+			const filtered = options.filter((row) => row.id.toLowerCase().includes(query) || row.name.toLowerCase().includes(query));
+			const visible = open && !disabled && filtered.length > 0;
+			const place = react.useCallback(() => {
+				const r = input.current?.getBoundingClientRect();
+				if (!r) return;
+				const below = window.innerHeight - r.bottom - 12;
+				const above = r.top - 12;
+				const up = below < Math.min(filtered.length * 34 + 8, 220) && above > below;
+				const width = Math.min(Math.max(r.width, 200), 440, window.innerWidth - 16);
+				setPos({
+					left: Math.max(8, Math.min(r.left, window.innerWidth - width - 8)),
+					width,
+					maxHeight: Math.max(0, Math.min(280, (up ? above : below) - 4)),
+					...up ? { bottom: window.innerHeight - r.top + 4 } : { top: r.bottom + 4 }
+				});
+			}, [filtered.length]);
+			react.useEffect(() => {
+				if (!visible) return;
+				place();
+				const pointer = (e) => {
+					if (!list.current?.contains(e.target) && !input.current?.contains(e.target)) setOpen(false);
+				};
+				const scroll = (e) => {
+					if (!list.current?.contains(e.target)) place();
+				};
+				document.addEventListener("pointerdown", pointer, true);
+				window.addEventListener("scroll", scroll, true);
+				window.addEventListener("resize", place);
+				return () => {
+					document.removeEventListener("pointerdown", pointer, true);
+					window.removeEventListener("scroll", scroll, true);
+					window.removeEventListener("resize", place);
+				};
+			}, [visible, place]);
+			react.useEffect(() => {
+				if (visible && active >= 0) list.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
+			}, [visible, active]);
+			const choose = (index) => {
+				if (disabled || !filtered[index]) return;
+				onChange(filtered[index].id);
+				setOpen(false);
+				setActive(-1);
+				input.current?.focus();
+			};
+			return h$2("div", { style: {
+				flex: 1,
+				minWidth: 0
+			} }, h$2("input", {
+				ref: input,
+				className: "dshp-select",
+				value,
+				disabled,
+				placeholder,
+				spellCheck: false,
+				autoComplete: "off",
+				role: "combobox",
+				"aria-label": label,
+				"aria-autocomplete": "list",
+				"aria-expanded": visible,
+				"aria-controls": visible ? `${id}-list` : void 0,
+				"aria-activedescendant": visible && active >= 0 ? `${id}-${active}` : void 0,
+				style: { cursor: "text" },
+				onFocus: () => {
+					place();
+					setOpen(true);
+				},
+				onClick: () => {
+					place();
+					setOpen(true);
+				},
+				onBlur: () => {
+					setOpen(false);
+					setActive(-1);
+				},
+				onChange: (e) => {
+					onChange(e.target.value.trim());
+					setActive(-1);
+					setOpen(true);
+				},
+				onKeyDown: (e) => {
+					if (e.nativeEvent.isComposing) return;
+					if (e.key === "Escape") {
+						e.preventDefault();
+						setOpen(false);
+						setActive(-1);
+					} else if (e.key === "Tab") setOpen(false);
+					else if (["ArrowDown", "ArrowUp"].includes(e.key) && filtered.length) {
+						e.preventDefault();
+						place();
+						setOpen(true);
+						setActive((i) => i < 0 ? e.key === "ArrowDown" ? 0 : filtered.length - 1 : (i + (e.key === "ArrowDown" ? 1 : -1) + filtered.length) % filtered.length);
+					} else if (e.key === "Enter" && visible && active >= 0) {
+						e.preventDefault();
+						choose(active);
+					}
+				}
+			}), visible ? h$2("div", {
+				ref: list,
+				id: `${id}-list`,
+				role: "listbox",
+				"aria-label": label,
+				className: "dshp-menu",
+				style: pos
+			}, ...filtered.map((row, i) => h$2("div", {
+				key: row.id,
+				id: `${id}-${i}`,
+				role: "option",
+				"aria-selected": row.id === value,
+				"data-index": i,
+				"data-active": i === active,
+				className: "dshp-option",
+				onPointerMove: () => setActive(i),
+				onPointerDown: (e) => e.preventDefault(),
+				onClick: () => choose(i)
+			}, h$2("span", {
+				style: {
+					flex: 1,
+					overflow: "hidden",
+					textOverflow: "ellipsis",
+					whiteSpace: "nowrap"
+				},
+				title: row.id
+			}, row.name === row.id ? row.id : `${row.name} · ${row.id}`), row.id === value ? h$2("span", { "aria-hidden": true }, "✓") : null))) : null);
+		}
+		//#endregion
 		//#region src/client/select.ts
 		const h$1 = react.createElement;
 		/** Menu appearance and fixed-position behavior follow dsh-free-search. */
@@ -758,20 +894,13 @@ window.__ModuleLoader__.load({
 						};
 					});
 				}
-			}) : null, choiceOf(row.id) === "system" ? h("span", { style: S.hint }, detectError ? t("detectFailed") : system ? `${t("detected")}${system.url}` : t("notDetected")) : null, errors[row.id] === void 0 ? null : h("div", { style: S.error }, t("invalid") + errors[row.id])))), h("div", { style: S.addRow }, h("input", {
-				style: {
-					...S.input,
-					flex: 1
-				},
+			}) : null, choiceOf(row.id) === "system" ? h("span", { style: S.hint }, detectError ? t("detectFailed") : system ? `${t("detected")}${system.url}` : t("notDetected")) : null, errors[row.id] === void 0 ? null : h("div", { style: S.error }, t("invalid") + errors[row.id])))), h("div", { style: S.addRow }, h(ProviderPicker, {
 				value: newId,
 				placeholder: t("addProviderPlaceholder"),
+				label: t("addProvider"),
 				disabled,
-				spellCheck: false,
-				"aria-label": t("addProvider"),
-				list: "dsh-proxy-provider-suggestions",
-				onChange: (event) => {
-					setNewId(event.target.value.trim());
-				}
+				options: suggestions.filter((row) => !shown.some((item) => item.id === row.id)),
+				onChange: setNewId
 			}), h("button", {
 				type: "button",
 				style: S.secondary,
@@ -786,10 +915,7 @@ window.__ModuleLoader__.load({
 					});
 					setNewId("");
 				}
-			}, t("add")), h("datalist", { id: "dsh-proxy-provider-suggestions" }, ...suggestions.filter((row) => !shown.some((item) => item.id === row.id)).map((row) => h("option", {
-				key: row.id,
-				value: row.id
-			}, row.name))))), h("div", { style: S.actions }, h("button", {
+			}, t("add")))), h("div", { style: S.actions }, h("button", {
 				type: "button",
 				style: {
 					...S.primary,

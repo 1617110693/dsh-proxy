@@ -9,6 +9,7 @@
  * the only import taken from the host's module table.
  */
 import * as React from 'react'
+import { ProviderPicker } from './provider-picker.ts'
 import { Select, selectCss } from './select.ts'
 import { en, zh, type LocaleKey } from './locales.ts'
 import {
@@ -239,17 +240,16 @@ function ProxySection({ api }: { api: Api }) {
         ),
       )),
       h('div', { style: S.addRow },
-        h('input', {
-          style: { ...S.input, flex: 1 }, value: newId, placeholder: t('addProviderPlaceholder'), disabled, spellCheck: false,
-          'aria-label': t('addProvider'), list: 'dsh-proxy-provider-suggestions',
-          onChange: (event: React.ChangeEvent<HTMLInputElement>) => { setNewId(event.target.value.trim()) },
+        h(ProviderPicker, {
+          value: newId, placeholder: t('addProviderPlaceholder'), label: t('addProvider'), disabled,
+          options: suggestions.filter(row => !shown.some(item => item.id === row.id)),
+          onChange: setNewId,
         }),
         h('button', {
           type: 'button', style: S.secondary, disabled: disabled || !isProviderId(newId) || shown.some(row => row.id === newId),
           onClick: () => { const id = newId; edit(next => { next.providers[id] = { choice: 'proxy', url: '' } }); setNewId('') },
         }, t('add')),
-        h('datalist', { id: 'dsh-proxy-provider-suggestions' },
-          ...suggestions.filter(row => !shown.some(item => item.id === row.id)).map(row => h('option', { key: row.id, value: row.id }, row.name))),
+
       ),
     ),
 
